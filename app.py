@@ -1,34 +1,29 @@
-from flask import Flask, render_template, jsonify, redirect
-import pymongo
+  
+from flask import Flask, render_template, redirect
+from flask_pymongo import PyMongo
 import scrape_mars
 
-# Create an instance of our Flask app.
+# Create an instance of Flask
+
 app = Flask(__name__)
 
-# Create connection variable
-conn = 'mongodb://localhost:27017'
+# Use PyMongo to establish Mongo connection
 
-# Pass connection to the pymongo instance.
-client = pymongo.MongoClient(conn)
+mongo = PyMongo(app, uri="mongodb://localhost:27017/weather_app")
 
-# Connect to a database. Will create one if not already available.
-db = client.mars_db
-
-
+# Route to render index.html template using data from Mongo
 @app.route("/")
 def home():
-    info = db.mars_d.find_one()
-    return render_template("index.html", info=info)
-  
+    mars_data = mongo.db.mars_db.find_one()
+    return render_template("index.html", mars_data=mars_data)
 
+# Route that will trigger the scrape function
 @app.route("/scrape")
 def scrape():
-    db.mars_d.drop()
-    mars=scrape_mars.scrape()
-    db.mars_d.insert_one(mars)
-    # Redirect back to home page
-    return redirect("http://localhost:5000/", code=302)
-
+    mars_db = mongo.db.mars_db
+    mars_data = scrape_mars.scrape_mars()
+    mars_data.update({}, mars_ , upsert=True)
+    return redirect("/", code=302)
 
 if __name__ == "__main__":
     app.run(debug=True)
